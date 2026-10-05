@@ -12,7 +12,7 @@ public class UsuarioUI {
     this.usuarioService = usuarioService;
   }
 
-  public void login() {
+  public boolean login() { // <-- Ahora devuelve boolean
     IO.println("Por favor, introduzca sus credenciales");
 
     while (true) {
@@ -28,7 +28,7 @@ public class UsuarioUI {
       boolean ok = usuarioService.login(credenciales);
       if (ok) {
         IO.println("Bienvenido al sistema.");
-        break;
+        return true; // <-- Login correcto
       } else {
         IO.println("Credenciales incorrectas, inténtelo de nuevo.");
       }

@@ -4,6 +4,7 @@ import es.iesquevedo.dao.common.SQLQueries;
 import es.iesquevedo.dao.model.Paciente;
 import es.iesquevedo.dao.repositories.PacienteRepository;
 import es.iesquevedo.dao.utils.DBConnection;
+import es.iesquevedo.domain.error.DatabaseError;
 import jakarta.inject.Inject;
 
 import java.sql.Connection;
@@ -49,7 +50,7 @@ public class JDBCPacienteRepository implements PacienteRepository {
             logger.log(Level.INFO, "Pacientes encontrados: " + lista.size());
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error al buscar todos los pacientes", e);
-            throw new RuntimeException(e);
+            throw new DatabaseError(e.getMessage());
         }
         return lista;
     }

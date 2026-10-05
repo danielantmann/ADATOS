@@ -7,14 +7,14 @@ public class MainMenu {
   private final UsuarioUI usuarioUi;
   private final PacienteUI pacienteUi;
   private final MedicoUI medicoUI;
-  private final HistoriaClinicaUI historiaClinicaUI; // <-- Anadido
+  private final HistoriaClinicaUI historiaClinicaUI;
 
   @Inject
   public MainMenu(UsuarioUI usuarioUi, PacienteUI pacienteUi, MedicoUI medicoUI, HistoriaClinicaUI historiaClinicaUI) {
     this.usuarioUi = usuarioUi;
     this.pacienteUi = pacienteUi;
     this.medicoUI = medicoUI;
-    this.historiaClinicaUI = historiaClinicaUI; // <-- Asignado
+    this.historiaClinicaUI = historiaClinicaUI;
   }
 
   public void run() {
@@ -37,7 +37,7 @@ public class MainMenu {
       IO.println("\n===== MENU PRINCIPAL - HOSPITAL =====");
       IO.println("1. Gestion de Pacientes");
       IO.println("2. Gestion de Medicos");
-      IO.println("3. Gestion de Historia Clinica"); // <-- Opcion nueva
+      IO.println("3. Gestion de Historia Clinica");
       IO.println("0. Salir");
       IO.println("Elija una opcion: ");
 
@@ -57,7 +57,7 @@ public class MainMenu {
           medicoUI.mostrarMenuMedicos();
           break;
         case 3:
-          historiaClinicaUI.mostrarMenuHistoria(); // <-- Redirige al menu de historia
+          historiaClinicaUI.mostrarMenuHistoria();
           break;
         case 0:
           IO.println("Saliendo de la aplicacion. ¡Hasta pronto!");

@@ -4,4 +4,6 @@ public class Constantes {
     // Mensajes de error y constantes de la aplicación
     public static final String DATABASE_ERROR = "Ocurrió un error en la BD";
     public static final String MYSQL_PROPERTIES = "mysql-properties.xml";
+    public static final String PACIENTE_DUPLLICADO_ERROR = "Este paciente ya existe en la BBDD";
+
 }

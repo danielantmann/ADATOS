@@ -1,5 +1,6 @@
 package es.iesquevedo.dao.repositories.jdbc;
 
+import es.iesquevedo.dao.common.RowMapper;
 import es.iesquevedo.dao.common.SQLQueries;
 import es.iesquevedo.dao.model.HistoriaClinica;
 import es.iesquevedo.dao.repositories.HistoriaClinicaRepository;
@@ -23,6 +24,19 @@ public class JDBCHistoriaClinicaRepository implements HistoriaClinicaRepository 
         this.dbConnection = dbConnection;
     }
 
+    private final RowMapper<HistoriaClinica> historiaRowMapper = rs -> {
+        Date fecha = rs.getDate("fecha_admision");
+        LocalDate fechaAdmision = (fecha != null) ? fecha.toLocalDate() : null;
+
+        return HistoriaClinica.builder()
+                .historiaId(rs.getLong("historia_id"))
+                .pacienteId(rs.getLong("paciente_id"))
+                .medicoId(rs.getLong("medico_id"))
+                .diagnostico(rs.getString("diagnostico"))
+                .fechaAdmision(fechaAdmision)
+                .build();
+    };
+
     @Override
     public List<HistoriaClinica> findByPacienteId(Long pacienteId) {
         List<HistoriaClinica> lista = new ArrayList<>();
@@ -32,17 +46,7 @@ public class JDBCHistoriaClinicaRepository implements HistoriaClinicaRepository 
             ps.setLong(1, pacienteId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Date fecha = rs.getDate("fecha_admision");
-                    LocalDate fechaAdmision = (fecha != null) ? fecha.toLocalDate() : null;
-
-                    HistoriaClinica historia = HistoriaClinica.builder()
-                            .historiaId(rs.getLong("historia_id"))
-                            .pacienteId(rs.getLong("paciente_id"))
-                            .medicoId(rs.getLong("medico_id"))
-                            .diagnostico(rs.getString("diagnostico"))
-                            .fechaAdmision(fechaAdmision)
-                            .build();
-                    lista.add(historia);
+                    lista.add(historiaRowMapper.mapRow(rs));
                 }
             }
         } catch (SQLException e) {
@@ -60,17 +64,7 @@ public class JDBCHistoriaClinicaRepository implements HistoriaClinicaRepository 
             ps.setLong(1, historiaId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    Date fecha = rs.getDate("fecha_admision");
-                    LocalDate fechaAdmision = (fecha != null) ? fecha.toLocalDate() : null;
-
-                    HistoriaClinica historia = HistoriaClinica.builder()
-                            .historiaId(rs.getLong("historia_id"))
-                            .pacienteId(rs.getLong("paciente_id"))
-                            .medicoId(rs.getLong("medico_id"))
-                            .diagnostico(rs.getString("diagnostico"))
-                            .fechaAdmision(fechaAdmision)
-                            .build();
-                    return Optional.of(historia);
+                    return Optional.of(historiaRowMapper.mapRow(rs));
                 }
             }
         } catch (SQLException e) {
@@ -81,24 +75,37 @@ public class JDBCHistoriaClinicaRepository implements HistoriaClinicaRepository 
     }
 
     @Override
-    public boolean save(HistoriaClinica historia) {
+    public Long save(HistoriaClinica historia) {
         try (Connection connection = dbConnection.getConnection();
-             PreparedStatement ps = connection.prepareStatement(SQLQueries.INSERT_HISTORIA)) {
+             PreparedStatement ps = connection.prepareStatement(SQLQueries.INSERT_HISTORIA, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setLong(1, historia.getPacienteId());
             ps.setLong(2, historia.getMedicoId());
             ps.setString(3, historia.getDiagnostico());
             ps.setDate(4, historia.getFechaAdmision() != null ? Date.valueOf(historia.getFechaAdmision()) : null);
 
-            return ps.executeUpdate() > 0;
+            int filas = ps.executeUpdate();
+            if (filas > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getLong(1); // Devuelve el ID generado
+                    }
+                }
+            }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error al guardar la historia clínica", e);
             throw new RuntimeException(e);
         }
+        return null;
     }
 
     @Override
     public boolean update(HistoriaClinica historia) {
+        if (historia.getHistoriaId() == null || findById(historia.getHistoriaId()).isEmpty()) {
+            logger.log(Level.WARNING, "Intento de actualizar historia inexistente ID: " + historia.getHistoriaId());
+            return false;
+        }
+
         try (Connection connection = dbConnection.getConnection();
              PreparedStatement ps = connection.prepareStatement(SQLQueries.UPDATE_HISTORIA)) {
 
@@ -117,11 +124,20 @@ public class JDBCHistoriaClinicaRepository implements HistoriaClinicaRepository 
 
     @Override
     public boolean delete(Long historiaId) {
+        if (findById(historiaId).isEmpty()) {
+            logger.log(Level.WARNING, "Intento de borrar historia que no existe ID: " + historiaId);
+            return false;
+        }
+
         try (Connection connection = dbConnection.getConnection();
              PreparedStatement ps = connection.prepareStatement(SQLQueries.DELETE_HISTORIA)) {
 
             ps.setLong(1, historiaId);
             return ps.executeUpdate() > 0;
+
+        } catch (java.sql.SQLIntegrityConstraintViolationException e) {
+            logger.log(Level.WARNING, "No se puede borrar la historia clínica ID " + historiaId + " porque tiene registros asociados.", e);
+            return false;
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error al borrar la historia clínica ID: " + historiaId, e);
             throw new RuntimeException(e);

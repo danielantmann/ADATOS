@@ -23,7 +23,7 @@ public class PacienteService {
                 .collect(Collectors.toList());
     }
 
-    public boolean savePaciente(PacienteDTO pacienteDTO) {
+    public Long savePaciente(PacienteDTO pacienteDTO) { // <--- Cambiado a Long
         return pacienteRepository.save(mapper.toEntity(pacienteDTO));
     }
 
@@ -33,5 +33,10 @@ public class PacienteService {
 
     public boolean deletePaciente(Long id) {
         return pacienteRepository.delete(id);
+    }
+
+    public java.util.Optional<PacienteDTO> getPacienteById(Long id) {
+        return pacienteRepository.findById(id)
+                .map(mapper::toDTO);
     }
 }

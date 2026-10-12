@@ -5,8 +5,9 @@ import es.iesquevedo.domain.services.PacienteService;
 import jakarta.inject.Inject;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
-
+import java.util.Optional;
 
 public class PacienteUI {
     private final PacienteService pacienteService;
@@ -62,68 +63,102 @@ public class PacienteUI {
     }
 
     private void anadirPaciente() {
-        IO.println("Introduce el nombre del paciente: ");
-        String nombre = IO.readln();
+        try {
+            IO.println("Introduce el nombre del paciente: ");
+            String nombre = IO.readln();
 
-        IO.println("Introduce la fecha de nacimiento (YYYY-MM-DD): ");
-        String fechaStr = IO.readln();
-        LocalDate fechaNac = fechaStr.isEmpty() ? null : LocalDate.parse(fechaStr);
+            IO.println("Introduce la fecha de nacimiento (YYYY-MM-DD): ");
+            String fechaStr = IO.readln();
+            LocalDate fechaNac = (fechaStr == null || fechaStr.trim().isEmpty()) ? null : LocalDate.parse(fechaStr.trim());
 
-        IO.println("Introduce el teléfono: ");
-        String telefono = IO.readln();
+            IO.println("Introduce el teléfono: ");
+            String telefono = IO.readln();
 
-        PacienteDTO nuevo = PacienteDTO.builder()
-                .nombre(nombre)
-                .fechaNacimiento(fechaNac)
-                .telefono(telefono)
-                .build();
+            PacienteDTO nuevo = PacienteDTO.builder()
+                    .nombre(nombre)
+                    .fechaNacimiento(fechaNac)
+                    .telefono(telefono)
+                    .build();
 
-        boolean exito = pacienteService.savePaciente(nuevo);
-        if (exito) {
-            IO.println("¡Paciente añadido con éxito!");
-        } else {
-            IO.println("Error al añadir el paciente.");
+            Long nuevoId = pacienteService.savePaciente(nuevo);
+            if (nuevoId != null) {
+                IO.println("¡Paciente añadido con éxito! ID asignado: " + nuevoId);
+            } else {
+                IO.println("Error al añadir el paciente.");
+            }
+        } catch (DateTimeParseException e) {
+            IO.println("Error: Formato de fecha incorrecto. Debe usar el formato YYYY-MM-DD (ej: 2000-05-12).");
         }
     }
 
     private void actualizarPaciente() {
-        IO.println("Introduce el ID del paciente a actualizar: ");
-        Long id = Long.parseLong(IO.readln());
+        try {
+            IO.println("Introduce el ID del paciente a actualizar: ");
+            Long id = Long.parseLong(IO.readln());
 
-        IO.println("Nuevo nombre: ");
-        String nombre = IO.readln();
+            Optional<PacienteDTO> existente = pacienteService.getPacienteById(id);
+            if (existente.isEmpty()) {
+                IO.println("Error: No existe ningún paciente con el ID " + id + ".");
+                return;
+            }
 
-        IO.println("Nueva fecha de nacimiento (YYYY-MM-DD): ");
-        String fechaStr = IO.readln();
-        LocalDate fechaNac = fechaStr.isEmpty() ? null : LocalDate.parse(fechaStr);
+            IO.println("Nuevo nombre: ");
+            String nombre = IO.readln();
 
-        IO.println("Nuevo teléfono: ");
-        String telefono = IO.readln();
+            IO.println("Nueva fecha de nacimiento (YYYY-MM-DD): ");
+            String fechaStr = IO.readln();
+            LocalDate fechaNac = (fechaStr == null || fechaStr.trim().isEmpty()) ? null : LocalDate.parse(fechaStr.trim());
 
-        PacienteDTO actualizado = PacienteDTO.builder()
-                .pacienteId(id)
-                .nombre(nombre)
-                .fechaNacimiento(fechaNac)
-                .telefono(telefono)
-                .build();
+            IO.println("Nuevo teléfono: ");
+            String telefono = IO.readln();
 
-        boolean exito = pacienteService.updatePaciente(actualizado);
-        if (exito) {
-            IO.println("¡Paciente actualizado con éxito!");
-        } else {
-            IO.println("Error al actualizar (comprueba que el ID exista).");
+            PacienteDTO actualizado = PacienteDTO.builder()
+                    .pacienteId(id)
+                    .nombre(nombre)
+                    .fechaNacimiento(fechaNac)
+                    .telefono(telefono)
+                    .build();
+
+            boolean exito = pacienteService.updatePaciente(actualizado);
+            if (exito) {
+                IO.println("¡Paciente actualizado con éxito!");
+            } else {
+                IO.println("Error al actualizar el paciente.");
+            }
+        } catch (NumberFormatException e) {
+            IO.println("Por favor, introduzca un ID numérico válido.");
+        } catch (DateTimeParseException e) {
+            IO.println("Error: Formato de fecha incorrecto. Debe usar el formato YYYY-MM-DD (ej: 2000-05-12).");
         }
     }
 
     private void borrarPaciente() {
         IO.println("Introduce el ID del paciente a borrar: ");
-        Long id = Long.parseLong(IO.readln());
+        try {
+            Long id = Long.parseLong(IO.readln());
 
-        boolean exito = pacienteService.deletePaciente(id);
-        if (exito) {
-            IO.println("¡Paciente borrado con éxito!");
-        } else {
-            IO.println("Error al borrar (comprueba que el ID exista).");
+            Optional<PacienteDTO> pacienteOpt = pacienteService.getPacienteById(id);
+            if (pacienteOpt.isEmpty()) {
+                IO.println("Error: No existe ningún paciente con el ID " + id + ".");
+                return;
+            }
+
+            IO.println("¿Estás seguro de que deseas borrar al paciente: " + pacienteOpt.get().getNombre() + "? (s/n): ");
+            String confirmacion = IO.readln();
+
+            if (confirmacion != null && confirmacion.equalsIgnoreCase("s")) {
+                boolean exito = pacienteService.deletePaciente(id);
+                if (exito) {
+                    IO.println("¡Paciente borrado con éxito!");
+                } else {
+                    IO.println("No se pudo borrar el paciente. Probablemente tenga un usuario o historia clínica asociada.");
+                }
+            } else {
+                IO.println("Operación de borrado cancelada.");
+            }
+
+        } catch (NumberFormatException e) {
+            IO.println("Por favor, introduzca un ID numérico válido.");
         }
     }
 }

@@ -101,16 +101,16 @@ public class HistoriaClinicaUI {
                     .fechaAdmision(fecha)
                     .build();
 
-            boolean exito = service.saveHistoria(dto);
-            if (exito) {
-                IO.println("¡Registro añadido con éxito!");
+            Long nuevoId = service.saveHistoria(dto); // <--- Recogemos el Long
+            if (nuevoId != null) {
+                IO.println("¡Registro añadido con éxito! ID asignado: " + nuevoId);
             } else {
                 IO.println("No se pudo añadir el registro.");
             }
         } catch (NumberFormatException e) {
-            IO.println("Error en los campos numéricos.");
+            IO.println("Error: Por favor, introduzca valores numéricos válidos en los IDs.");
         } catch (DateTimeParseException e) {
-            IO.println("Formato de fecha incorrecto. Use AAAA-MM-DD.");
+            IO.println("Error: Formato de fecha incorrecto. Use AAAA-MM-DD.");
         }
     }
 
@@ -152,9 +152,9 @@ public class HistoriaClinicaUI {
                 IO.println("No se pudo actualizar el registro.");
             }
         } catch (NumberFormatException e) {
-            IO.println("Error en los campos numéricos.");
+            IO.println("Error: Por favor, introduzca valores numéricos válidos en los IDs.");
         } catch (DateTimeParseException e) {
-            IO.println("Formato de fecha incorrecto. Use AAAA-MM-DD.");
+            IO.println("Error: Formato de fecha incorrecto. Use AAAA-MM-DD.");
         }
     }
 
@@ -162,12 +162,27 @@ public class HistoriaClinicaUI {
         IO.println("Introduce el ID del registro de historia a borrar: ");
         try {
             Long historiaId = Long.parseLong(IO.readln());
-            boolean exito = service.deleteHistoria(historiaId);
-            if (exito) {
-                IO.println("¡Registro borrado con éxito!");
-            } else {
-                IO.println("No se encontró el registro o no se pudo borrar.");
+
+            Optional<HistoriaClinicaDTO> historiaOpt = service.getHistoriaById(historiaId);
+            if (historiaOpt.isEmpty()) {
+                IO.println("Error: No existe ningún registro de historia con el ID " + historiaId + ".");
+                return;
             }
+
+            IO.println("¿Estás seguro de que deseas borrar este registro de historia clínica? (s/n): ");
+            String confirmacion = IO.readln();
+
+            if (confirmacion != null && confirmacion.equalsIgnoreCase("s")) {
+                boolean exito = service.deleteHistoria(historiaId);
+                if (exito) {
+                    IO.println("¡Registro borrado con éxito!");
+                } else {
+                    IO.println("No se pudo borrar el registro. Probablemente tenga datos asociados.");
+                }
+            } else {
+                IO.println("Operación de borrado cancelada.");
+            }
+
         } catch (NumberFormatException e) {
             IO.println("Por favor, introduzca un ID numérico válido.");
         }

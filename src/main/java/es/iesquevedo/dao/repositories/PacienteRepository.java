@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface PacienteRepository {
     List<Paciente> findAll();
     Optional<Paciente> findById(Long id);
-    boolean save(Paciente paciente);
+    Long save(Paciente paciente);
     boolean update(Paciente paciente);
     boolean delete(Long id);
 }

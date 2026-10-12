@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface HistoriaClinicaRepository {
     List<HistoriaClinica> findByPacienteId(Long pacienteId);
     Optional<HistoriaClinica> findById(Long historiaId);
-    boolean save (HistoriaClinica historia);
+    Long save (HistoriaClinica historia);
     boolean update (HistoriaClinica historia);
     boolean delete(Long historiaId);
 }

@@ -30,7 +30,7 @@ public class HistoriaClinicaService {
         return repository.findById(id).map(mapper::toDto);
     }
 
-    public boolean saveHistoria(HistoriaClinicaDTO dto) {
+    public Long saveHistoria(HistoriaClinicaDTO dto) { // <--- Cambiado a Long
         HistoriaClinica historia = mapper.toEntity(dto);
         return repository.save(historia);
     }

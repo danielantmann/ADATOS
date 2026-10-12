@@ -1,16 +1,18 @@
 package es.iesquevedo.dao.repositories.jdbc;
 
-import es.iesquevedo.common.Constantes;
 import es.iesquevedo.dao.common.SQLQueries;
 import es.iesquevedo.dao.model.Paciente;
 import es.iesquevedo.dao.repositories.PacienteRepository;
 import es.iesquevedo.dao.utils.DBConnection;
-import es.iesquevedo.domain.error.DatabaseError;
 import jakarta.inject.Inject;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.sql.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -47,7 +49,7 @@ public class JDBCPacienteRepository implements PacienteRepository {
             logger.log(Level.INFO, "Pacientes encontrados: " + lista.size());
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error al buscar todos los pacientes", e);
-            throw new DatabaseError(e.getMessage());
+            throw new RuntimeException(e);
         }
         return lista;
     }
@@ -73,7 +75,6 @@ public class JDBCPacienteRepository implements PacienteRepository {
                      return Optional.of(paciente);
                  }
              }
-
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error al buscar paciente por ID: " + id, e);
             throw new RuntimeException(e);
@@ -93,10 +94,9 @@ public class JDBCPacienteRepository implements PacienteRepository {
 
             int filas = preparedStatement.executeUpdate();
             return filas > 0;
-
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error al guardar paciente", e);
-            throw new DatabaseError(Constantes.DATABASE_ERROR);
+            throw new RuntimeException(e);
         }
     }
 

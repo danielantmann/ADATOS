@@ -6,13 +6,9 @@ import es.iesquevedo.dao.repositories.PacienteRepository;
 import es.iesquevedo.dao.utils.DBConnection;
 import jakarta.inject.Inject;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.sql.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -83,21 +79,28 @@ public class JDBCPacienteRepository implements PacienteRepository {
     }
 
     @Override
-    public boolean save(Paciente paciente) {
+
+    public Long save(Paciente paciente) {
         try (Connection connection = dbConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SQLQueries.INSERT_PACIENTE)) {
+             PreparedStatement ps = connection.prepareStatement(SQLQueries.INSERT_PACIENTE, Statement.RETURN_GENERATED_KEYS)) {
 
-            logger.log(Level.INFO, SQLQueries.INSERT_PACIENTE);
-            preparedStatement.setString(1, paciente.getNombre());
-            preparedStatement.setDate(2, paciente.getFechaNacimiento() != null ? Date.valueOf(paciente.getFechaNacimiento()) : null);
-            preparedStatement.setString(3, paciente.getTelefono());
+            ps.setString(1, paciente.getNombre());
+            ps.setDate(2, paciente.getFechaNacimiento() != null ? Date.valueOf(paciente.getFechaNacimiento()) : null);
+            ps.setString(3, paciente.getTelefono());
 
-            int filas = preparedStatement.executeUpdate();
-            return filas > 0;
+            int filas = ps.executeUpdate();
+            if (filas > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getLong(1); // Devuelve el ID generado
+                    }
+                }
+            }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Error al guardar paciente", e);
             throw new RuntimeException(e);
         }
+        return null;
     }
 
     @Override
